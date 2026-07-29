@@ -1,7 +1,6 @@
 using InvestmentSimulatorAPI.Models;
 using InvestmentSimulatorAPI.Interfaces;
 using InvestmentSimulatorAPI.Models.Database;
-using InvestmentSimulatorAPI.Exceptions;
 
 namespace InvestmentSimulatorAPI.Repositories
 {
@@ -13,33 +12,25 @@ namespace InvestmentSimulatorAPI.Repositories
 
         public async Task Create(PortfolioModel entity)
         {
-            try
-            {
-                await _dbContext.Portfolio.AddAsync(entity);
-                await _dbContext.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new DataModelException($"Ошибка при создании портфолио: {ex}", entity.Id);
-            }
+            await _dbContext.Portfolio.AddAsync(entity);
+            await _dbContext.SaveChangesAsync();
         }
 
         public async Task Delete(PortfolioModel entity)
         {
-            try
-            {
-                _dbContext.Portfolio.Remove(entity);
-                await _dbContext.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new DataModelException($"Ошибка при удалении портфолио: {ex}", entity.Id);
-            }
+            _dbContext.Portfolio.Remove(entity);
+            await _dbContext.SaveChangesAsync();
         }
 
         public IQueryable<PortfolioModel> GetAll()
         {
             return _dbContext.Portfolio;
+        }
+
+        public async Task Update(PortfolioModel entity)
+        {
+            _dbContext.Portfolio.Update(entity);
+            await _dbContext.SaveChangesAsync();
         }
     }
 }

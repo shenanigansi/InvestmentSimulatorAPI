@@ -1,7 +1,6 @@
 using InvestmentSimulatorAPI.Models;
 using InvestmentSimulatorAPI.Interfaces;
 using InvestmentSimulatorAPI.Models.Database;
-using InvestmentSimulatorAPI.Exceptions;
 
 namespace InvestmentSimulatorAPI.Repositories
 {
@@ -13,28 +12,20 @@ namespace InvestmentSimulatorAPI.Repositories
 
         public async Task Create(TransactionModel entity)
         {
-            try
-            {
-                await _dbContext.Transactions.AddAsync(entity);
-                await _dbContext.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new DataModelException($"Ошибка при создании транзакции: {ex}", entity.Id);
-            }
+            await _dbContext.Transactions.AddAsync(entity);
+            await _dbContext.SaveChangesAsync();
         }
 
         public async Task Delete(TransactionModel entity)
         {
-            try
-            {
-                _dbContext.Transactions.Remove(entity);
-                await _dbContext.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new DataModelException($"Ошибка при удалении транзакции: {ex}", entity.Id);
-            }
+            _dbContext.Transactions.Remove(entity);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task Update(TransactionModel entity)
+        {
+            _dbContext.Transactions.Update(entity);
+            await _dbContext.SaveChangesAsync();
         }
 
         public IQueryable<TransactionModel> GetAll()
