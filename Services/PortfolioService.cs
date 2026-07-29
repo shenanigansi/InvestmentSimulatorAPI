@@ -1,41 +1,58 @@
-using InvestmentSimulatorAPI.Models;
+using InvestmentSimulatorAPI.Interfaces;
 using InvestmentSimulatorAPI.Models.Database;
+using InvestmentSimulatorAPI.Models.DTO;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace InvestmentSimulatorAPI.Services;
-public class PortfolioService
+public class PortfolioService : BaseServiceDb<PortfolioModel>
 {
-    private ApplicationDbContext _context;
+    public PortfolioService(IBaseRepository<PortfolioModel> repository) 
+        : base(repository, Log.Logger.ForContext<PortfolioService>()) { }
 
-    public PortfolioService(ApplicationDbContext context) => _context = context;
-
-    public async Task<PortfolioModel> GetPortfolioById(string id)
+    /// <summary>
+    /// Пополнение портфолио
+    /// </summary>
+    /// <param name="entity">портфолио</param>
+    /// <param name="funds">сумма</param>
+    /// <exception cref="ArgumentException"></exception>
+    public async Task AddFunds(PortfolioModel entity, int? funds)
     {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                throw new ArgumentException("Идентификатор не может быть пустым.", nameof(id));
-            }
+        if (funds < 1 || funds == null)
+            throw new ArgumentException("Взнос funds должен быть больше 0", nameof(funds));
 
-            var findedPortfolio = await _context.Portfolio.SingleOrDefaultAsync(f => f.Id.ToString() == id);
-
-            if (findedPortfolio is null)
-            {
-                throw new KeyNotFoundException($"Портфолио с ID {id} не найдено");
-            }
-
-            return findedPortfolio;
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException($"Ошибка при получении портфолио с ID: {id}: {ex.Message}", ex);
-        }
+        if (entity.Quantity == null)
+            entity.Quantity = funds;
+        else
+            entity.Quantity += funds;
+        
+        await _repository.Update(entity);
+        
+        _logger.Information($"На портфолио {entity.Id} успешно зачислено {funds}");
     }
 
-    public async Task AddFunds(PortfolioModel entity, float funds)
+    /// <summary>
+    /// Получение портфолио по символу
+    /// </summary>
+    /// <param name="fundDto">fundDto</param>
+    /// <param name="userId">пользователь id</param>
+    /// <returns></returns>
+    public async Task<PortfolioModel> GetUserPortfolioBySymbol(FundDtoModel fundDto, int userId)
     {
-        entity.Quantity += funds;
-        await _context.SaveChangesAsync();
+        var foundPortfolio = await _repository.GetAll().
+            Where(p => p.UserId == userId && p.Symbol == fundDto.Symbol).FirstOrDefaultAsync();
+
+        if (foundPortfolio == null)
+        {
+            foundPortfolio = new PortfolioModel()
+            {
+                Symbol = fundDto.Symbol,
+                UserId = userId
+            };
+            
+            await _repository.Create(foundPortfolio);
+        }
+        
+        return foundPortfolio;
     }
 }

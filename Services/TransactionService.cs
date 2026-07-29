@@ -1,37 +1,12 @@
-using InvestmentSimulatorAPI.Models;
+using InvestmentSimulatorAPI.Interfaces;
 using InvestmentSimulatorAPI.Models.Database;
-using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace InvestmentSimulatorAPI.Services
 {
-    public class TransactionService
+    public class TransactionService : BaseServiceDb<TransactionModel>
     {
-        private ApplicationDbContext _context;
-
-        public TransactionService(ApplicationDbContext context) => _context = context;
-
-        public async Task<TransactionModel> GetTransactionById(string id)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(id))
-                {
-                    throw new ArgumentException("Идентификатор не может быть пустым.", nameof(id));
-                }
-
-                var findedTransaction = await _context.Transactions.SingleOrDefaultAsync(f => f.Id.ToString() == id);
-
-                if (findedTransaction is null)
-                {
-                    throw new KeyNotFoundException($"Транзакция с ID {id} не найдена");
-                }
-
-                return findedTransaction;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Ошибка при получении транзакции с ID: {id}: {ex.Message}", ex);
-            }
-        }
+        public TransactionService(IBaseRepository<TransactionModel> repository) 
+            : base(repository, Log.Logger.ForContext<TransactionService>()) { }
     }
 }
